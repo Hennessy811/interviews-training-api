@@ -10,28 +10,29 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     const json = JSON.parse(req.body);
     if (json) {
       mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true });
-      const existingUser = UserModel.find({ email: json.email });
-      if (existingUser) {
-        res.status(200).json({ ok: "user exists" });
-      } else {
-        const user = new UserModel(json);
+      UserModel.find({ email: json.email }, (err, docs) => {
+        if (!err) {
+          console.log(docs);
+          if (docs.length) {
+            res.status(200).json({ ok: "user exists" });
+          } else {
+            const user = new UserModel(json);
 
-        user.save(function (err) {
-          mongoose.disconnect(); // отключение от базы данных
+            user.save(function (err) {
+              mongoose.disconnect(); // отключение от базы данных
 
-          if (err) return console.log(err);
-          console.log("Сохранен объект", user);
-        });
+              if (err) return console.log(err);
+              console.log("Сохранен объект", user);
+            });
+            mongoose.disconnect(); // отключение от базы данных
 
-        res.status(200).json({ ok: "saved" });
-      }
+            res.status(200).json({ ok: "saved" });
+          }
+        }
+      });
     } else {
       res.status(500).json({ error: "something happened", json });
     }
-
-    // // Get a database connection, cached or otherwise,
-    // // using the connection string environment variable as the argument
-    //
   } else {
     res.status(200).json({ ok: "ok" });
   }
